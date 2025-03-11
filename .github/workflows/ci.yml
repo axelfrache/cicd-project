@@ -38,6 +38,7 @@ jobs:
             echo "Des erreurs de style ont été trouvées."
             exit 1
           }
+
   test:
     name: Run Tests
     needs: ktlint
