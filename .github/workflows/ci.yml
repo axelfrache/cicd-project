@@ -57,7 +57,7 @@ jobs:
 
       - name: Run tests
         run: |
-          ./mvn test
+          mvn test
 
   build:
     name: Build and Push Docker Image
