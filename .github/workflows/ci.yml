@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - '**'
-  pull_request:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     branches:
       - main
 
@@ -51,6 +52,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=latest" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -58,4 +68,6 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/city-api:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/city-api:${{ steps.get_version.outputs.VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/city-api:latest
