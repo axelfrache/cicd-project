@@ -58,4 +58,4 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/city-api:latestZ
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/city-api:latest
