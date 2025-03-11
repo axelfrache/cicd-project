@@ -57,7 +57,9 @@ jobs:
 
   build:
     name: Build and Push Docker Image
-    needs: ktlint
+    needs:
+        - ktlint
+        - test
     runs-on: ubuntu-latest
 
     steps:
