@@ -31,7 +31,10 @@ class ApiTests(
     fun testGetAllCities() {
         every { cityRepository.findAll() } returns
             listOf(
-                City(1, "31", "feur", "31790", "Saint-Sauveur", 45.610769, 2.876716),
+                City(
+                    1, "31", "feur", "31790", "Saint-Sauveur", 45.610769,
+                    2.876716,
+                ),
             )
         mockMvc
             .perform(get("/city"))
@@ -44,7 +47,10 @@ class ApiTests(
         every {
             cityRepository.save(any())
         } returns
-            City(id = 1, departmentCode = "31", inseeCode = "feur", zipCode = "31790", name = "Saint-Sauveur", lat = 45.610769, lon = 2.876716)
+            City(
+                id = 1, departmentCode = "31", inseeCode = "feur", zipCode = "31790", name = "Saint-Sauveur",
+                lat = 45.610769, lon = 2.876716,
+            )
 
         mockMvc
             .perform(
