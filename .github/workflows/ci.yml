@@ -34,7 +34,8 @@ jobs:
             echo "Des erreurs de style ont été trouvées."
             exit 1
           }
-   test:
+
+  test:
     name: Run Tests
     needs: ktlint
     runs-on: ubuntu-latest
