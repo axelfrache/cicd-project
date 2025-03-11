@@ -72,3 +72,18 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/city-api:${{ steps.get_version.outputs.VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/city-api:latest
+
+      - name: Scan for vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/city-api:${{ steps.get_version.outputs.VERSION }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          cache: true
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+        sarif_file: 'trivy-results.sarif'
