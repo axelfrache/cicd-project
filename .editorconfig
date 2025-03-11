@@ -1,0 +1,26 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+max_line_length = 120
+tab_width = 4
+
+[*.{kt,kts}]
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+ktlint_standard = enabled
+ktlint_experimental = enabled
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_trailing-comma-on-declaration-site = enabled
+ktlint_standard_trailing-comma-on-call-site = enabled
+
+# Désactiver certaines règles si nécessaire
+# ktlint_standard_no-wildcard-imports = disabled
+
+[*.{yml,yaml}]
+indent_size = 2 

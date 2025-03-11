@@ -5,8 +5,9 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
 
 @Configuration
-class DatabaseConfig(private val env: Environment) : InitializingBean {
-
+class DatabaseConfig(
+    private val env: Environment,
+) : InitializingBean {
     override fun afterPropertiesSet() {
         checkRequiredProperty("CITY_API_DB_URL")
         checkRequiredProperty("CITY_API_DB_USER")
@@ -18,4 +19,4 @@ class DatabaseConfig(private val env: Environment) : InitializingBean {
             throw IllegalStateException("$property must be set")
         }
     }
-} 
+}
