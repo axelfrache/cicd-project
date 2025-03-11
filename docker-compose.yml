@@ -1,4 +1,17 @@
 services:
+  api:
+    build: .
+    environment:
+      CITY_API_ADDR: "0.0.0.0"
+      CITY_API_PORT: "2022"
+      CITY_API_DB_URL: "db:5432/city_api"
+      CITY_API_DB_USER: "user"
+      CITY_API_DB_PWD: "password"
+    ports:
+      - "2022:2022"
+    depends_on:
+      - db
+
   db:
     image: postgres:latest
     environment:
