@@ -4,6 +4,10 @@ metadata:
   name: {{ include "springcity.fullname" . }}
   labels:
     {{- include "springcity.labels" . | nindent 4 }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "2022"
+    prometheus.io/path: "/actuator/prometheus"
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}

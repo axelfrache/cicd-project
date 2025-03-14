@@ -10,12 +10,25 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Counter
 
 @RestController
 @Tag(name = "City API", description = "API pour gérer les villes")
 class CityController(
     private val cityRepository: CityRepository,
+    private val meterRegistry: MeterRegistry
 ) {
+    private val requestCounter: Counter = Counter
+        .builder("city_api_requests_total")
+        .description("Total number of requests to the City API")
+        .register(meterRegistry)
+
+    private val cityCreationCounter: Counter = Counter
+        .builder("city_api_cities_created_total")
+        .description("Total number of cities created")
+        .register(meterRegistry)
+
     @Operation(
         summary = "Créer une nouvelle ville",
         description = "Crée une nouvelle ville avec les informations fournies",
@@ -30,6 +43,7 @@ class CityController(
     fun createCity(
         @RequestBody cityRequest: CityRequest,
     ): ResponseEntity<City> {
+        requestCounter.increment()
         val city =
             City(
                 id = null,
@@ -40,6 +54,7 @@ class CityController(
                 lat = cityRequest.lat,
                 lon = cityRequest.lon,
             )
+        cityCreationCounter.increment()
         val savedCity = cityRepository.save(city)
         return ResponseEntity(savedCity, HttpStatus.CREATED)
     }
