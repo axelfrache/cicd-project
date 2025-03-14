@@ -1,17 +1,4 @@
 services:
-  api:
-    build: .
-    environment:
-      CITY_API_ADDR: "0.0.0.0"
-      CITY_API_PORT: "2022"
-      CITY_API_DB_URL: "db:5432/city_api"
-      CITY_API_DB_USER: "user"
-      CITY_API_DB_PWD: "password"
-    ports:
-      - "2022:2022"
-    depends_on:
-      - db
-
   db:
     image: postgres:latest
     environment:
@@ -22,3 +9,29 @@ services:
       - "5432:5432"
     volumes:
       - ./init:/docker-entrypoint-initdb.d
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+
+volumes:
+  grafana-data:
