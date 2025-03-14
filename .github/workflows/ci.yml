@@ -39,6 +39,9 @@ jobs:
     name: Build and Push Docker Image
     needs: ktlint
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
 
     steps:
       - name: Clone repo
