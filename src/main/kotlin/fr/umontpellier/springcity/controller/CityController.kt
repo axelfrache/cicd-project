@@ -3,6 +3,8 @@ package fr.umontpellier.springcity.controller
 import fr.umontpellier.springcity.dto.CityRequest
 import fr.umontpellier.springcity.model.City
 import fr.umontpellier.springcity.repository.CityRepository
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -10,24 +12,24 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Counter
 
 @RestController
 @Tag(name = "City API", description = "API pour gérer les villes")
 class CityController(
     private val cityRepository: CityRepository,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
 ) {
-    private val requestCounter: Counter = Counter
-        .builder("city_api_requests_total")
-        .description("Total number of requests to the City API")
-        .register(meterRegistry)
+    private val requestCounter: Counter =
+        Counter
+            .builder("city_api_requests_total")
+            .description("Total number of requests to the City API")
+            .register(meterRegistry)
 
-    private val cityCreationCounter: Counter = Counter
-        .builder("city_api_cities_created_total")
-        .description("Total number of cities created")
-        .register(meterRegistry)
+    private val cityCreationCounter: Counter =
+        Counter
+            .builder("city_api_cities_created_total")
+            .description("Total number of cities created")
+            .register(meterRegistry)
 
     @Operation(
         summary = "Créer une nouvelle ville",
