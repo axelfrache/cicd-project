@@ -1,0 +1,69 @@
+# Fichier values.yaml corrigé et complet pour city-api
+
+replicaCount: 1
+
+image:
+  repository: axelfrache/city-api
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: NodePort
+  port: 2022
+  targetPort: 2022
+  nodePort: 32022
+
+# Désactivez l'ingress car nous n'en avons pas besoin pour le moment
+ingress:
+  enabled: false
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+appConfig:
+  env:
+    - name: CITY_API_ADDR
+      value: "0.0.0.0"
+    - name: CITY_API_PORT
+      value: "2022"
+    - name: CITY_API_DB_URL
+      value: "db-service:5432/city_api"
+    - name: CITY_API_DB_USER
+      value: "user"
+    - name: CITY_API_DB_PWD
+      value: "password"
+
+  persistence:
+    enabled: false
+
+  logging:
+    level: INFO
