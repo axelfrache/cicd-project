@@ -1,66 +1,117 @@
-# CI/CD
+# SpringCity - API Spring Boot avec K3s, Prometheus et Grafana
 
-Un rapport **détaillé** des actions réalisé est attendu. Un lien vers un dépôt GitHub devra y figurer.
+[![CI](https://github.com/axelfrache/cicd-project/actions/workflows/ci.yml/badge.svg)](https://github.com/axelfrache/cicd-project/actions/workflows/ci.yml)
 
-## Prérequis
+## Présentation
 
-- docker
-- docker-compose
+SpringCity est une API REST développée avec Spring Boot permettant de gérer des informations sur des villes françaises. Ce projet démontre la mise en place d'une architecture complète incluant :
 
-## Questions
+- Développement d'une API REST avec Spring Boot et Kotlin
+- Stockage des données dans PostgreSQL
+- Déploiement sur Kubernetes (K3s) via Helm
+- Monitoring avec Prometheus et Grafana
+- Intégration continue avec GitHub Actions
 
-1) Créez un fichier `docker-compose.yml` et ajoutez-y un service `db` s'appuyant sur l'image Docker `postgres:latest`.
+## Fonctionnalités
 
-2) Créez une base de données `city_api` avec une table `city` contenant les colonnes suivantes :
-    - `id`, un entier non signé non nul, clé primaire de la colonne ;
-    - `department_code`, une chaîne de caractères non nulle ;
-    - `insee_code`, une chaîne de caractères ;
-    - `zip_code`, une chaîne de caractères ;
-    - `name`, une chaîne de caractères non nulle ;
-    - `lat`, un flottant non nul ;
-    - `lon`, un flottant non nul.
+- Création et récupération d'informations sur des villes
+- Exposition de métriques pour Prometheus via Spring Boot Actuator
+- Monitoring complet de l'application (performances, santé, métriques métier)
+- Déploiement automatisé via Helm sur K3s
 
-3) Dans le langage de votre choix, créez un service web ayant les spécifications suivantes :
-    - `POST /city` avec pour corps de la requête un JSON au format décrit plus bas doit retourner un code `201` et enregistrer la ville dans la base de données ;
-    - `GET /city` doit retourner un code `200` avec la liste des villes au format JSON ;
-    - `GET /_health` doit retourner un code `204`.
+## Technologies utilisées
 
-    Vous pouvez trouver un exemple de JSON [ici](https://github.com/leroyguillaume/tps/blob/main/cities.json).
+- **Backend** : Spring Boot, Kotlin
+- **Base de données** : PostgreSQL
+- **Conteneurisation** : Docker, Docker Compose
+- **Orchestration** : Kubernetes (K3s), Helm
+- **Monitoring** : Prometheus, Grafana
+- **CI/CD** : GitHub Actions
 
-    Faîtes en sorte que votre service soit configurable avec les variables d'environnement suivantes :
-    - `CITY_API_ADDR`, qui correspond à l'adresse d'écoute de votre serveur HTTP (par défaut, `127.0.0.1`) ;
-    - `CITY_API_PORT`, qui correspond au port d'écoute de votre serveur HTTP (par défaut, `2022`) ;
-    - `CITY_API_DB_URL`, qui correspond à l'URL de connexion vers la base de données (le service doit planter si non specifié) ;
-    - `CITY_API_DB_USER`, qui correspond au nom d'utilisateur utilisé pour se connecter à la base de données (le service doit planter si non specifié) ;
-    - `CITY_API_DB_PWD`, qui correspond au mot de passe utilisé pour se connecter à l base de données (le service doit planter si non specifié).
+## Documentation
 
-4) Écrivez les tests suivants :
-    - un test qui s'assure que l'insertion dans la base de données fonctionne correctement ;
-    - un test qui s'assure que la récupération de la liste des villes fonctionne correctement ;
-    - un test qui s'assure que l'endpoint de healthcheck fonctionne correctement.
+Pour une documentation détaillée de l'implémentation, veuillez consulter le [rapport complet](DO3-FRACHE-DESPAUX-SOULET%20Rapport%20CI_CD.pdf).
 
-5) Écrivez un fichier `Dockerfile` à la racine de votre projet. Testez que votre image Docker est correcte.
+## Installation
 
-6) Écrivez un workflow GitHub Actions `ci` pour qu'un linter soit exécuté à chaque push.
+### Prérequis
 
-7) Modifiez le workflow pour que les tests s'exécutent à chaque push.
+- Docker et Docker Compose
+- K3s (pour le déploiement Kubernetes)
+- kubectl
+- Helm
 
-8) Modifiez le workflow pour qu'un build de l'image Docker soit réalisé à chaque push.
+### Démarrage rapide avec Docker Compose
 
-9) Modifiez le workflow pour que l'image Docker soit push sur le DockerHub avec pour tag `city-api:latest`.
+```bash
+# Cloner le dépôt
+git clone https://github.com/axelfrache/cicd-project.git
+cd cicd-project
 
-10) Écrivez un workflow GitHub Actions `release` qui, lorsqu'un tag au format `vX.X.X` soit poussé build et push l'image Docker avec un tag `city-api:X.X.X`.
+# Lancer l'application avec Docker Compose
+docker-compose up -d
+```
 
-11) Modifiez le workflow pour qu'il scanne les CVEs présentes dans votre image.
+L'application sera accessible à l'adresse : http://localhost:2022
 
-12) Installez k3s sur votre machine local.
+### Déploiement sur K3s
 
-13) Écrivez un chart Helm de déploiement de l'application.
+```bash
+# Installation de K3s
+curl -sfL https://get.k3s.io | sh -
 
-14) Déployez votre application dans votre k3s.
+# Déploiement avec Helm
+helm install springcity ./deploy/helm/springcity
+```
 
-15) Ajouter un endpoint `/metrics` compatible Prometheus (des [libs](https://sysdig.com/blog/prometheus-metrics/) sont disponibles).
+L'application sera accessible à l'adresse : http://localhost:32022
 
-16) Ajoutez un Prometheus dans votre docker-compose qui scrappe les métriques de votre application.
+## Monitoring
 
-17) Ajoutez un Grafana dans votre docker-compose et créez y un dahsboard pour monitorer votre application.
+### Prometheus
+
+Prometheus est configuré pour collecter les métriques de l'application Spring Boot via l'endpoint `/actuator/prometheus`.
+
+Interface web : http://localhost:9090
+
+### Grafana
+
+Grafana est configuré pour visualiser les métriques collectées par Prometheus.
+
+- Interface web : http://localhost:3000
+- Identifiants par défaut : admin/admin
+- Un dashboard préconfiguré est disponible pour surveiller :
+  - Performances des API
+  - Métriques JVM
+  - Métriques système
+  - Métriques métier
+
+## Endpoints API
+
+- `POST /city` : Créer une nouvelle ville
+- `GET /city` : Récupérer la liste des villes
+- `GET /_health` : Vérifier l'état de santé de l'application
+- `GET /actuator/prometheus` : Exposer les métriques pour Prometheus
+
+## Tests
+
+```bash
+# Exécuter les tests
+mvn test
+```
+
+## Variables d'environnement
+
+L'application utilise les variables d'environnement suivantes :
+
+- `CITY_API_ADDR` : Adresse d'écoute du serveur HTTP (défaut : 127.0.0.1)
+- `CITY_API_PORT` : Port d'écoute du serveur HTTP (défaut : 2022)
+- `CITY_API_DB_URL` : URL de connexion à la base de données
+- `CITY_API_DB_USER` : Nom d'utilisateur pour la base de données
+- `CITY_API_DB_PWD` : Mot de passe pour la base de données
+
+## Auteurs
+
+- Axel FRACHE
+- Léo DESPAUX
+- Florian SOULET
