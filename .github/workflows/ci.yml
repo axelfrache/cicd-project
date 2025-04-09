@@ -6,6 +6,8 @@ on:
       - '**'
     paths-ignore:
       - '**/README.md'
+      - '**/*.md'
+      - 'docs/**'
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
@@ -13,15 +15,18 @@ on:
       - main
     paths-ignore:
       - '**/README.md'
+      - '**/*.md'
+      - 'docs/**'
 
 jobs:
-  ktlint:
-    name: Check Code Quality
+  verify:
+    name: Verify Code
     runs-on: ubuntu-latest
-
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -30,40 +35,32 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run ktlint
+      - name: Cache ktlint
+        id: cache-ktlint
+        uses: actions/cache@v3
+        with:
+          path: ./ktlint
+          key: ${{ runner.os }}-ktlint-1.0.1
+
+      - name: Download ktlint
+        if: steps.cache-ktlint.outputs.cache-hit != 'true'
         run: |
           curl -sSLO https://github.com/pinterest/ktlint/releases/download/1.0.1/ktlint
           chmod a+x ktlint
+
+      - name: Run ktlint
+        run: |
           ./ktlint "src/**/*.kt" || {
             echo "Des erreurs de style ont été trouvées."
             exit 1
           }
 
-  test:
-    name: Run Tests
-    needs: ktlint
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Run tests
-        run: |
-          mvn test
+      - name: Run tests with Maven
+        run: mvn test -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
   build:
     name: Build and Push Docker Image
-    needs:
-        - ktlint
-        - test
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -73,15 +70,8 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          fetch-depth: 1  # Optimisation: récupère uniquement le dernier commit
 
       - name: Extract version from tag
         id: get_version
@@ -91,6 +81,15 @@ jobs:
           else
             echo "VERSION=latest" >> $GITHUB_OUTPUT
           fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -102,9 +101,12 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/city-api:${{ steps.get_version.outputs.VERSION }}
             ${{ secrets.DOCKERHUB_USERNAME }}/city-api:latest
+          platforms: linux/amd64
+          provenance: false
+          builder: ${{ steps.buildx.outputs.name }}
 
       - name: Scan for vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/city-api:${{ steps.get_version.outputs.VERSION }}
           format: 'sarif'
@@ -112,6 +114,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
           cache: true
+          timeout: '5m'
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
