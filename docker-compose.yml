@@ -9,8 +9,19 @@ services:
       CITY_API_DB_PWD: "password"
     ports:
       - "2022:2022"
+    networks:
+      monitoring:
+        aliases:
+          - springcity
+          - api
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2022/_health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   db:
     image: postgres:latest
@@ -22,3 +33,50 @@ services:
       - "5432:5432"
     volumes:
       - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d city_api"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - monitoring
+    depends_on:
+      api:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:

@@ -1,56 +1,87 @@
 package fr.umontpellier.springcity
 
 import com.ninjasquad.springmockk.MockkBean
+import fr.umontpellier.springcity.controller.CityController
 import fr.umontpellier.springcity.model.City
 import fr.umontpellier.springcity.repository.CityRepository
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
+import io.mockk.slot
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
-@WebMvcTest
-class ApiTests(
-    @Autowired val mockMvc: MockMvc,
-) {
+@WebMvcTest(CityController::class)
+@Import(ApiTests.TestConfig::class)
+class ApiTests {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
     @MockkBean
     private lateinit var cityRepository: CityRepository
+
+    class TestConfig {
+        @Bean
+        fun meterRegistry(): MeterRegistry = SimpleMeterRegistry()
+    }
 
     @Test
     fun testHealthCheck() {
         mockMvc
             .perform(get("/_health"))
-            .andExpect(status().`is`(204))
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(status().isNoContent())
     }
 
     @Test
     fun testGetAllCities() {
+        // Configurer le mock pour retourner une liste de villes
         every { cityRepository.findAll() } returns
             listOf(
                 City(
-                    1, "31", "feur", "31790", "Saint-Sauveur", 45.610769,
-                    2.876716,
+                    id = 1,
+                    departmentCode = "31",
+                    inseeCode = "feur",
+                    zipCode = "31790",
+                    name = "Saint-Sauveur",
+                    lat = 45.610769,
+                    lon = 2.876716,
                 ),
             )
+
         mockMvc
             .perform(get("/city"))
-            .andExpect(status().`is`(200))
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
     }
 
     @Test
     fun testPostCity() {
-        every {
-            cityRepository.save(any())
-        } returns
+        // Capturer l'objet City passé à save()
+        val citySlot = slot<City>()
+
+        // Configurer le mock pour retourner une ville avec ID
+        every { cityRepository.save(capture(citySlot)) } answers {
             City(
-                id = 1, departmentCode = "31", inseeCode = "feur", zipCode = "31790", name = "Saint-Sauveur",
-                lat = 45.610769, lon = 2.876716,
+                id = 1,
+                departmentCode = citySlot.captured.departmentCode,
+                inseeCode = citySlot.captured.inseeCode,
+                zipCode = citySlot.captured.zipCode,
+                name = citySlot.captured.name,
+                lat = citySlot.captured.lat,
+                lon = citySlot.captured.lon,
             )
+        }
 
         mockMvc
             .perform(
@@ -68,7 +99,8 @@ class ApiTests(
                         }
                         """.trimIndent(),
                     ),
-            ).andExpect(status().`is`(201))
+            ).andDo(MockMvcResultHandlers.print())
+            .andExpect(status().isCreated())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
     }
 }

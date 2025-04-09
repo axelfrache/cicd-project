@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'springcity'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+        - 'api:2022'
+        - 'springcity:2022'
+    tls_config:
+      insecure_skip_verify: true
