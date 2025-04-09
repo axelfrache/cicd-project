@@ -11,6 +11,8 @@ RUN mvn package -DskipTests
 # Stage 2: Run the application
 FROM amazoncorretto:21-alpine
 
+RUN apk add --no-cache curl
+
 WORKDIR /app
 
 EXPOSE 2022
