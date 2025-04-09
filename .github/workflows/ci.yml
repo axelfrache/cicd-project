@@ -8,6 +8,8 @@ on:
       - '**/README.md'
       - '**/*.md'
       - 'docs/**'
+      - '.gitignore'
+      - '.editorconfig'
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
@@ -17,6 +19,12 @@ on:
       - '**/README.md'
       - '**/*.md'
       - 'docs/**'
+      - '.gitignore'
+      - '.editorconfig'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
@@ -55,8 +63,29 @@ jobs:
             exit 1
           }
 
-      - name: Run tests with Maven
-        run: mvn test -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      - name: Run tests and verify
+        run: |
+          mvn verify \
+            -B \
+            -T 2C \
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+            -Dmaven.test.failure.ignore=false
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: target/surefire-reports
+          retention-days: 7
 
   build:
     name: Build and Push Docker Image
@@ -115,6 +144,16 @@ jobs:
           exit-code: '1'
           cache: true
           timeout: '5m'
+          ignore-unfixed: true
+          security-checks: 'vuln,config,secret'
+
+      - name: Cache Trivy vulnerability database
+        uses: actions/cache@v3
+        with:
+          path: .trivycache/
+          key: ${{ runner.os }}-trivy-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-trivy-
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
