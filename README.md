@@ -113,5 +113,5 @@ L'application utilise les variables d'environnement suivantes :
 ## Auteurs
 
 - Axel FRACHE
-- Léo DESPAUX
-- Florian SOULET
+- Noa DESPAUX
+- Liam SOULET
