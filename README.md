@@ -100,6 +100,162 @@ Grafana est configuré pour visualiser les métriques collectées par Prometheus
 mvn test
 ```
 
+## CI/CD et Environnements
+
+### Architecture des environnements
+
+Ce projet utilise **ArgoCD** pour gérer trois types d'environnements :
+
+1. **Production statique** (`springcity-static`)
+   - Base de données PostgreSQL persistante (PVC)
+   - Image Docker : `axelfrache/city-api:latest`
+   - URL : `http://springcity-static.10.112.0.121.nip.io`
+
+2. **Environnements PR éphémères** (`springcity-pr-XX`)
+   - Créés automatiquement pour chaque Pull Request
+   - Base de données initialisée avec un dump de production
+   - Image Docker : `axelfrache/city-api:pr-XX`
+   - URL : `http://pr-XX.10.112.0.121.nip.io`
+   - **Supprimés automatiquement** quand la PR est fermée/mergée
+
+### Workflow CI/CD
+
+```mermaid
+graph LR
+    A[Push/PR] --> B[GitHub Actions]
+    B --> C[Build & Test]
+    C --> D[Build Docker Image]
+    D --> E[Push to Docker Hub]
+    E --> F[ArgoCD détecte]
+    F --> G[Déploiement K8s]
+```
+
+**Pipeline GitHub Actions :**
+1. **Tests** : Exécution des tests unitaires et d'intégration
+2. **Build** : Construction de l'image Docker
+3. **Push** : Publication sur Docker Hub avec tags :
+   - `latest` pour master
+   - `pr-XX` pour les PRs
+
+**ArgoCD :**
+- Synchronisation automatique des environnements
+- ApplicationSet pour les PRs (détection automatique)
+- Gestion du cycle de vie complet des environnements éphémères
+
+### Isolation des bases de données
+
+Chaque environnement a sa **propre base de données PostgreSQL** :
+
+- **Production** : Données persistantes (PVC)
+- **PRs** : Base initialisée avec le dump de prod, données éphémères
+- **Isolation totale** : Les modifications dans une PR n'affectent pas la production
+
+### Tester l'isolation
+
+Utilisez le script automatisé pour vérifier l'isolation :
+
+```bash
+./test-db-isolation.sh 13
+```
+
+Ce script va :
+1. Vérifier l'accessibilité des environnements
+2. Lister les villes initiales (dump)
+3. Ajouter une ville de test dans la PR
+4. Vérifier que la production n'est **pas impactée**
+
+### Mise à jour du dump de production
+
+Pour mettre à jour les données initiales des PRs :
+
+```bash
+# 1. Extraire les données de prod
+./scripts/dump-prod-db.sh
+
+# 2. Commiter le dump
+git add deploy/helm/springcity/init-data/dump.sql
+git commit -m "chore: update prod DB dump"
+git push
+
+# 3. Les nouvelles PRs utiliseront automatiquement le nouveau dump
+```
+
+Voir [DB_DUMP_WORKFLOW.md](DB_DUMP_WORKFLOW.md) pour plus de détails.
+
+## Tester l'API
+
+### Exemples avec curl
+
+#### Lister les villes
+
+```bash
+# Production
+curl http://springcity-static.10.112.0.121.nip.io/city | jq .
+
+# PR #13
+curl http://pr-13.10.112.0.121.nip.io/city | jq .
+
+# Avec header Host (si problème DNS)
+curl -H "Host: pr-13.10.112.0.121.nip.io" http://10.112.0.121/city | jq .
+```
+
+#### Ajouter une ville
+
+```bash
+curl -X POST http://pr-13.10.112.0.121.nip.io/city \
+  -H "Content-Type: application/json" \
+  -d '{
+    "department_code": "34",
+    "insee_code": "34172",
+    "zip_code": "34000",
+    "name": "Montpellier",
+    "lat": 43.610769,
+    "lon": 3.876716
+  }' | jq .
+```
+
+#### Supprimer une ville
+
+```bash
+# Supprimer la ville avec ID 4
+curl -X DELETE http://pr-13.10.112.0.121.nip.io/city/4
+```
+
+### Health check
+
+```bash
+# Vérifier l'état de santé
+curl http://springcity-static.10.112.0.121.nip.io/_health
+
+# Retourne HTTP 204 No Content si OK
+```
+
+### Scripts de test
+
+- `test-db-isolation.sh` : Test complet d'isolation des BDD
+- `pr-curl.sh` : Helper pour accéder aux PRs sans /etc/hosts
+- Voir [MANUAL_TEST_GUIDE.md](MANUAL_TEST_GUIDE.md) pour les tests manuels
+
+## Accès aux interfaces
+
+### ArgoCD
+
+```bash
+# Port-forward vers ArgoCD
+kubectl port-forward -n argocd svc/argocd-server 8080:443 &
+
+# Récupérer le mot de passe admin
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+Interface : https://localhost:8080
+- **User** : `admin`
+- **Password** : (récupéré avec la commande ci-dessus)
+
+### Prometheus & Grafana
+
+Voir la section [Monitoring](#monitoring) ci-dessus.
+
 ## Variables d'environnement
 
 L'application utilise les variables d'environnement suivantes :
