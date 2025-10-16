@@ -5,8 +5,7 @@ on:
     branches:
       - '**'
     paths-ignore:
-      - '**/README.md'
-      - '**/*.md'
+      - 'README.md'
       - 'docs/**'
       - '.gitignore'
       - '.editorconfig'
@@ -15,12 +14,7 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - '**/README.md'
-      - '**/*.md'
-      - 'docs/**'
-      - '.gitignore'
-      - '.editorconfig'
+      - master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
