@@ -27,6 +27,7 @@ postgres:
 service:
   type: ClusterIP
   port: 2022
+  targetPort: 2022
 
 ingress:
   enabled: true
