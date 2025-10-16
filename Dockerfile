@@ -15,7 +15,7 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 
-EXPOSE 8080 2022
+EXPOSE 2022
 
 COPY --from=maven_build /app/target/*.jar /app/application.jar
 

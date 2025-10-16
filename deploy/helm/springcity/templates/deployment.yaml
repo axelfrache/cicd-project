@@ -54,12 +54,9 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-            - name: management
-              containerPort: {{ .Values.management.port }}
-              protocol: TCP
           livenessProbe:
             httpGet:
-              path: /_health
+              path: {{ .Values.probes.liveness.path }}
               port: {{ .Values.service.port }}
             initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
@@ -67,7 +64,7 @@ spec:
             failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
           readinessProbe:
             httpGet:
-              path: /_health
+              path: {{ .Values.probes.readiness.path }}
               port: {{ .Values.service.port }}
             initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}

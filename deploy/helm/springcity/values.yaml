@@ -23,28 +23,24 @@ securityContext: {}
 
 service:
   type: NodePort
-  port: 8080
-  targetPort: 8080
-  nodePort: 32080
-
-management:
   port: 2022
+  targetPort: 2022
+  nodePort: 32022
 
 probes:
   liveness:
-    path: /actuator/health/liveness
+    path: /_health
     initialDelaySeconds: 90
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
   readiness:
-    path: /actuator/health/readiness
+    path: /_health
     initialDelaySeconds: 60
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
 
-# Désactivez l'ingress car nous n'en avons pas besoin pour le moment
 ingress:
   enabled: false
 
@@ -71,8 +67,6 @@ appConfig:
     - name: CITY_API_ADDR
       value: "0.0.0.0"
     - name: CITY_API_PORT
-      value: "8080"
-    - name: CITY_API_MANAGEMENT_PORT
       value: "2022"
     - name: CITY_API_DB_URL
       value: "db-service:5432/city_api"

@@ -12,8 +12,6 @@ appConfig:
     - name: CITY_API_ADDR
       value: "0.0.0.0"
     - name: CITY_API_PORT
-      value: "8080"
-    - name: CITY_API_MANAGEMENT_PORT
       value: "2022"
     - name: CITY_API_DB_URL
       value: "db-service:5432/city_api"
@@ -32,7 +30,7 @@ postgres:
 
 service:
   type: ClusterIP
-  port: 8080
+  port: 2022
 
 ingress:
   enabled: true

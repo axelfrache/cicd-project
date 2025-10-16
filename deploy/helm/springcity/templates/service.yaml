@@ -14,9 +14,5 @@ spec:
       {{- end }}
       protocol: TCP
       name: http
-    - port: {{ .Values.management.port }}
-      targetPort: {{ .Values.management.port }}
-      protocol: TCP
-      name: management
   selector:
     {{- include "springcity.selectorLabels" . | nindent 4 }}
