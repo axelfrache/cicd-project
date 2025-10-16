@@ -56,20 +56,16 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /_health
+              path: /actuator/health
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 60
+            initialDelaySeconds: 30
             periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 6
           readinessProbe:
             httpGet:
-              path: /_health
+              path: /actuator/health
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 45
+            initialDelaySeconds: 30
             periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
