@@ -1,6 +1,6 @@
 image:
   repository: axelfrache/city-api
-  tag: main
+  tag: latest
   pullPolicy: Always
 
 replicaCount: 1
