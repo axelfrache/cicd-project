@@ -30,8 +30,8 @@ spec:
         pr-number: '{{.number}}'
       annotations:
         pr-title: '{{.title}}'
-        pr-url: '{{.url}}'
         pr-author: '{{.author}}'
+        pr-branch: '{{.branch}}'
     
     spec:
       project: springcity

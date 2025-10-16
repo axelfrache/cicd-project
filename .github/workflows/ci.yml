@@ -94,8 +94,8 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1  # Optimisation: récupère uniquement le dernier commit
-
+          fetch-depth: 1
+          
       - name: Determine Docker tags
         id: docker_meta
         run: |
