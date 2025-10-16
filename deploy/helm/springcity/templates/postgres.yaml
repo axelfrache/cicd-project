@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:latest
+          image: postgres:15-alpine
           env:
             - name: POSTGRES_DB
               value: city_api
@@ -49,11 +49,14 @@ spec:
               value: user
             - name: POSTGRES_PASSWORD
               value: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           ports:
             - containerPort: 5432
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
+              subPath: data
             - name: init-db
               mountPath: /docker-entrypoint-initdb.d
       volumes:
