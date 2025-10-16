@@ -34,7 +34,7 @@ ingress:
   enabled: true
   className: traefik
   hosts:
-    - host: springcity.127.0.0.1.nip.io
+    - host: springcity-static.10.112.0.121.nip.io
       paths:
         - path: /
           pathType: Prefix

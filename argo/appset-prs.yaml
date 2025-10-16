@@ -73,16 +73,18 @@ spec:
             postgres:
               enabled: true
               storage: 1Gi
+              initFromDump: true
             
             service:
               type: ClusterIP
               port: 2022
+              targetPort: 2022
             
             ingress:
               enabled: true
               className: traefik
               hosts:
-                - host: pr-{{.number}}.SERVER_IP.nip.io
+                - host: pr-{{.number}}.10.112.0.121.nip.io
                   paths:
                     - path: /
                       pathType: Prefix
