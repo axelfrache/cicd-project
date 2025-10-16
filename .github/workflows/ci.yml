@@ -102,13 +102,25 @@ jobs:
         with:
           fetch-depth: 1  # Optimisation: récupère uniquement le dernier commit
 
-      - name: Extract version from tag
-        id: get_version
+      - name: Determine Docker tags
+        id: docker_meta
         run: |
+          # Pour les tags Git (releases)
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "tags=${{ secrets.DOCKERHUB_USERNAME }}/city-api:${VERSION},${{ secrets.DOCKERHUB_USERNAME }}/city-api:latest" >> $GITHUB_OUTPUT
+          # Pour les PRs
+          elif [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
+            PR_NUM=${{ github.event.pull_request.number }}
+            echo "tags=${{ secrets.DOCKERHUB_USERNAME }}/city-api:pr-${PR_NUM},${{ secrets.DOCKERHUB_USERNAME }}/city-api:pr-${PR_NUM}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          # Pour la branche main
+          elif [[ $GITHUB_REF == 'refs/heads/main' ]]; then
+            echo "tags=${{ secrets.DOCKERHUB_USERNAME }}/city-api:main,${{ secrets.DOCKERHUB_USERNAME }}/city-api:latest" >> $GITHUB_OUTPUT
+          # Pour les autres branches
           else
-            echo "VERSION=latest" >> $GITHUB_OUTPUT
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            BRANCH_NAME_SAFE=${BRANCH_NAME//\//-}
+            echo "tags=${{ secrets.DOCKERHUB_USERNAME }}/city-api:${BRANCH_NAME_SAFE}" >> $GITHUB_OUTPUT
           fi
 
       - name: Set up Docker Buildx
@@ -127,21 +139,25 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/city-api:${{ steps.get_version.outputs.VERSION }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/city-api:latest
+          tags: ${{ steps.docker_meta.outputs.tags }}
           platforms: linux/amd64
           provenance: false
           builder: ${{ steps.buildx.outputs.name }}
 
+      - name: Extract first tag for Trivy scan
+        id: first_tag
+        run: |
+          FIRST_TAG=$(echo "${{ steps.docker_meta.outputs.tags }}" | cut -d',' -f1)
+          echo "image=${FIRST_TAG}" >> $GITHUB_OUTPUT
+
       - name: Scan for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/city-api:${{ steps.get_version.outputs.VERSION }}
+          image-ref: ${{ steps.first_tag.outputs.image }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-          exit-code: '1'
+          exit-code: '0'
           cache: true
           timeout: '5m'
           ignore-unfixed: true

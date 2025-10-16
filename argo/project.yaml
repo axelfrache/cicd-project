@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: springcity
+  namespace: argocd
+spec:
+  description: SpringCity GitOps project with static and ephemeral environments
+  
+  sourceRepos:
+    - https://github.com/axelfrache/cicd-project.git
+  
+  destinations:
+    # Environnement statique
+    - namespace: springcity-static
+      server: https://kubernetes.default.svc
+    # Environnements éphémères (PR)
+    - namespace: 'springcity-pr-*'
+      server: https://kubernetes.default.svc
+  
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

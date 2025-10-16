@@ -1,0 +1,61 @@
+image:
+  repository: axelfrache/city-api
+  tag: "{{imageTag}}"
+  pullPolicy: Always
+
+fullnameOverride: "{{name}}"
+
+replicaCount: 1
+
+appConfig:
+  env:
+    - name: CITY_API_ADDR
+      value: "0.0.0.0"
+    - name: CITY_API_PORT
+      value: "2022"
+    - name: CITY_API_DB_URL
+      value: "db-service:5432/city_api"
+    - name: CITY_API_DB_USER
+      value: "user"
+    - name: CITY_API_DB_PWD
+      value: "password"
+    - name: SPRING_PROFILES_ACTIVE
+      value: "dev"
+    - name: ENVIRONMENT
+      value: "ephemeral"
+
+postgres:
+  enabled: true
+  storage: 1Gi
+
+service:
+  type: ClusterIP
+  port: 2022
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: "{{name}}.127.0.0.1.nip.io"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 384Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+prometheus:
+  scrape: true
+
+podAnnotations:
+  environment: "ephemeral"
+  pr-number: "{{number}}"

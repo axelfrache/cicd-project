@@ -1,0 +1,132 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: springcity-prs
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  
+  generators:
+    - pullRequest:
+        github:
+          owner: axelfrache
+          repo: cicd-project
+          # Token GitHub pour éviter le rate-limit (optionnel en local)
+          # kubectl -n argocd create secret generic github-token --from-literal=token=ghp_xxx
+          tokenRef:
+            secretName: github-token
+            key: token
+        requeueAfterSeconds: 60
+        filters:
+          - branchMatch: ".*"  # Toutes les branches
+  
+  template:
+    metadata:
+      name: 'springcity-pr-{{.number}}'
+      labels:
+        app: springcity
+        environment: ephemeral
+        pr-number: '{{.number}}'
+      annotations:
+        pr-title: '{{.title}}'
+        pr-url: '{{.url}}'
+        pr-author: '{{.author}}'
+    
+    spec:
+      project: springcity
+      
+      source:
+        repoURL: https://github.com/axelfrache/cicd-project.git
+        targetRevision: '{{.head_sha}}'  # Suit le dernier commit de la PR
+        path: deploy/helm/springcity
+        helm:
+          values: |
+            image:
+              repository: axelfrache/city-api
+              tag: pr-{{.number}}
+              pullPolicy: Always
+            
+            fullnameOverride: pr-{{.number}}
+            
+            replicaCount: 1
+            
+            appConfig:
+              env:
+                - name: CITY_API_ADDR
+                  value: "0.0.0.0"
+                - name: CITY_API_PORT
+                  value: "2022"
+                - name: CITY_API_DB_URL
+                  value: "db-service:5432/city_api"
+                - name: CITY_API_DB_USER
+                  value: "user"
+                - name: CITY_API_DB_PWD
+                  value: "password"
+                - name: SPRING_PROFILES_ACTIVE
+                  value: "dev"
+                - name: ENVIRONMENT
+                  value: "ephemeral"
+                - name: PR_NUMBER
+                  value: "{{.number}}"
+            
+            postgres:
+              enabled: true
+              storage: 1Gi
+            
+            service:
+              type: ClusterIP
+              port: 2022
+            
+            ingress:
+              enabled: true
+              className: traefik
+              hosts:
+                - host: pr-{{.number}}.127.0.0.1.nip.io
+                  paths:
+                    - path: /
+                      pathType: Prefix
+              tls: []
+            
+            resources:
+              limits:
+                cpu: 300m
+                memory: 384Mi
+              requests:
+                cpu: 50m
+                memory: 128Mi
+            
+            autoscaling:
+              enabled: false
+            
+            prometheus:
+              scrape: true
+            
+            podAnnotations:
+              environment: "ephemeral"
+              pr-number: "{{.number}}"
+      
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'springcity-pr-{{.number}}'
+      
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 2m
+      
+      revisionHistoryLimit: 2
+  
+  # Quand une PR est fermée/mergée, l'Application correspondante est supprimée
+  # ce qui déclenche le prune et nettoie toutes les ressources (namespace, PVC, etc.)
