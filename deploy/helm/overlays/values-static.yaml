@@ -23,6 +23,7 @@ appConfig:
 postgres:
   enabled: true
   storage: 1Gi
+  initFromDump: false
 
 service:
   type: ClusterIP

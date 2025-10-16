@@ -80,3 +80,8 @@ appConfig:
 
   logging:
     level: INFO
+
+postgres:
+  enabled: true
+  storage: 1Gi
+  initFromDump: false

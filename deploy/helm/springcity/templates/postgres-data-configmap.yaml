@@ -1,0 +1,13 @@
+{{- if .Values.postgres.enabled }}
+{{- if .Values.postgres.initFromDump }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "springcity.fullname" . }}-postgres-data
+  labels:
+    {{- include "springcity.labels" . | nindent 4 }}
+data:
+  dump.sql: |
+{{ .Files.Get "init-data/dump.sql" | indent 4 }}
+{{- end }}
+{{- end }}

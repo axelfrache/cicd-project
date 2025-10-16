@@ -57,12 +57,23 @@ spec:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
               subPath: data
+            {{- if .Values.postgres.initFromDump }}
+            - name: init-data
+              mountPath: /docker-entrypoint-initdb.d
+            {{- else }}
             - name: init-db
               mountPath: /docker-entrypoint-initdb.d
+            {{- end }}
       volumes:
         - name: postgres-storage
           persistentVolumeClaim:
             claimName: postgres-pvc
+        {{- if .Values.postgres.initFromDump }}
+        - name: init-data
+          configMap:
+            name: {{ include "springcity.fullname" . }}-postgres-data
+        {{- else }}
         - name: init-db
           configMap:
-            name: postgres-init-script 
+            name: postgres-init-script
+        {{- end }} 
