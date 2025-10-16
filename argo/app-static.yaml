@@ -13,25 +13,8 @@ spec:
     targetRevision: HEAD
     path: deploy/helm/springcity
     helm:
-      values: |
-        image:
-          repository: axelfrache/city-api
-          tag: latest
-          pullPolicy: Always
-        
-        replicaCount: 1
-        
-        service:
-          type: ClusterIP
-          port: 2022
-        
-        resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 100m
-            memory: 256Mi
+      valueFiles:
+        - ../overlays/values-static.yaml
   
   destination:
     server: https://kubernetes.default.svc
