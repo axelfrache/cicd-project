@@ -62,7 +62,7 @@ class CityController(
     }
 
     @Operation(
-        summary = "Obtenir toutes les villes",
+        summary = "Obtenir toutes les villes 2",
         description = "Récupère la liste de toutes les villes enregistrées",
     )
     @ApiResponse(responseCode = "200", description = "Liste des villes récupérée avec succès")
