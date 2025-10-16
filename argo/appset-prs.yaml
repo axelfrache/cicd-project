@@ -82,7 +82,7 @@ spec:
               enabled: true
               className: traefik
               hosts:
-                - host: pr-{{.number}}.127.0.0.1.nip.io
+                - host: pr-{{.number}}.SERVER_IP.nip.io
                   paths:
                     - path: /
                       pathType: Prefix

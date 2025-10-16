@@ -155,6 +155,21 @@ echo ""
 
 echo -e "${BOLD}${BLUE}[7/7]${NC} Déploiement des configurations..."
 
+# Détection de l'IP du serveur
+echo -e "${YELLOW}⏳${NC} Détection de l'IP du serveur..."
+SERVER_IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -n1)
+
+if [[ -z "$SERVER_IP" ]]; then
+    echo -e "${YELLOW}⚠${NC} Impossible de détecter l'IP automatiquement"
+    read -p "Entrez l'IP de ce serveur (ex: 192.168.1.100): " SERVER_IP
+fi
+
+echo -e "${GREEN}✓${NC} IP du serveur : ${YELLOW}${SERVER_IP}${NC}"
+echo -e "${BLUE}ℹ${NC} Les applications seront accessibles via : ${YELLOW}pr-XX.${SERVER_IP}.nip.io${NC}"
+
+# Configurer l'IP dans l'ApplicationSet
+sed -i "s/SERVER_IP/${SERVER_IP}/g" "${REPO_DIR}/argo/appset-prs.yaml"
+
 # Projet ArgoCD
 kubectl apply -f "${REPO_DIR}/argo/project.yaml"
 echo -e "${GREEN}✓${NC} Projet springcity créé"
@@ -209,8 +224,12 @@ echo -e "  ${BLUE}1.${NC} Créez une Pull Request sur GitHub"
 echo -e "  ${BLUE}2.${NC} GitHub Actions build l'image Docker ${YELLOW}pr-XX${NC}"
 echo -e "  ${BLUE}3.${NC} ArgoCD détecte la PR (max 60s)"
 echo -e "  ${BLUE}4.${NC} Un environnement ${YELLOW}springcity-pr-XX${NC} est créé automatiquement"
-echo -e "  ${BLUE}5.${NC} Accessible via ${YELLOW}http://pr-XX.127.0.0.1.nip.io${NC}"
+echo -e "  ${BLUE}5.${NC} Accessible via ${YELLOW}http://pr-XX.${SERVER_IP}.nip.io${NC}"
 echo -e "  ${BLUE}6.${NC} À la fermeture de la PR, l'environnement est supprimé"
+echo ""
+echo -e "${BOLD}${BLUE}ℹ${NC} Accès depuis n'importe quelle machine du réseau${NC}"
+echo -e "  Les applications sont accessibles depuis tout le réseau local"
+echo -e "  Exemple : ${YELLOW}http://pr-10.${SERVER_IP}.nip.io${NC}"
 echo ""
 
 echo -e "${BOLD}${GREEN}Testez maintenant en créant une PR !${NC} 🚀"
